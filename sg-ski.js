@@ -46,7 +46,8 @@ class SG_SKI_RESOUT extends ev{
 		super();
 		let that = this;
 
-		this.mapArray = [];
+		this.mapArray = new Array(0);
+		this.bestPathArray = new Array(0);
 		this.mapFilePath = mapFilePath;
 		this.rowNum = 0;
 		this.colNum = 0;
@@ -80,11 +81,41 @@ class SG_SKI_RESOUT extends ev{
 
 SG_SKI_RESOUT.prototype.isPeakArea = function(row, col) {
 	// body...
+	if(row && this.mapArray[row-1][col] > this.mapArray[row][col]){
+		return false;
+	}
+	else if( (row < this.rowNum-1) && (this.mapArray[row+1][col] > this.mapArray[row][col]) ){
+		return false;
+	}
+	else if( col && this.mapArray[row][col-1] > this.mapArray[row][col]){
+		return false;
+	}
+	else if( (col<this.colNum-1) && (this.mapArray[row][col+1] > this.mapArray[row][col]) ){
+		return false;
+	}
+	else{
+		return true;
+	}
 };
 
 
 SG_SKI_RESOUT.prototype.isBottomArea = function(row, col) {
 	// body...
+	if(row && this.mapArray[row-1][col] < this.mapArray[row][col]){
+		return false;
+	}
+	else if( (row < this.rowNum-1) && (this.mapArray[row+1][col] < this.mapArray[row][col]) ){
+		return false;
+	}
+	else if( col && this.mapArray[row][col-1] < this.mapArray[row][col]){
+		return false;
+	}
+	else if( (col<this.colNum-1) && (this.mapArray[row][col+1] < this.mapArray[row][col]) ){
+		return false;
+	}
+	else{
+		return true;
+	}
 };
 
 
@@ -94,8 +125,31 @@ SG_SKI_RESOUT.prototype.getMapBestPath = function() {
 	console.log(this.mapArray);
 };
 
+/**
+ *	To get the longest path for the given area
+ * 
+ * @param  {srcRow: the row of the given area}
+ * @param  {srcCol: the column of the given area}
+ * @return { {
+ * 	dstRow:
+ * 	dstCol:
+ * 	length: 
+ * }}
+ */
 SG_SKI_RESOUT.prototype.getAreaLongestPath = function(srcRow, srcCol) {
-	// body...
+	if(this.isBottomArea(srcRow, srcCol)){
+		var bestPath = {
+			dstRow : srcRow,
+			dstCol : srcCol,
+			length : 1,
+		};
+
+		return bestPath;
+	}
+
+	else{
+
+	}
 };
 
 
@@ -117,7 +171,11 @@ resort.on('mapRead', (line) => {
 			process.exit(RETURN_ERR.ERR_ILLEGAL_MAP);
 		}
 
-		resort.mapArray.push(numBufferString);
+		var numBufferDigit = new Array(numBufferString.length);
+		for(var index=0; index<numBufferString.length; index++){
+			numBufferDigit[index] = parseInt(numBufferString[index]);
+		}
+		resort.mapArray.push(numBufferDigit);
 	}	
 })
 
