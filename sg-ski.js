@@ -59,9 +59,17 @@ rd.on('line', (line) => {
 
 
 
-function SG_SKI_RESOUT(mapFile){
+function SG_SKI_RESOUT(mapFilePath){
+	let that = this;
 	this.mapArray = new Array(0);
+	this.mapFilePath = mapFile;
+	this.mapReadlineInterface = readline.createInterface({
+		input: fs.createReadStream(that.mapFilePath);
+	})
 
+	this.mapReadlineInterface.on('line' (line) =>{
+		
+	})
 }
 
 
