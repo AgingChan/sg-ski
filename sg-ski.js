@@ -94,6 +94,7 @@ SG_SKI_RESOUT.prototype.isPeakArea = function(row, col) {
 		return false;
 	}
 	else{
+		//console.log("New Peak found, whose row is: " + row + " and column is " + col);
 		return true;
 	}
 };
@@ -114,6 +115,7 @@ SG_SKI_RESOUT.prototype.isBottomArea = function(row, col) {
 		return false;
 	}
 	else{
+		//console.log("New Bottom found, whose row is: " + row + " and column is " + col);
 		return true;
 	}
 };
@@ -123,6 +125,13 @@ SG_SKI_RESOUT.prototype.getMapBestPath = function() {
 	// body...
 	console.log('To get the best path of the resort');
 	console.log(this.mapArray);
+
+	for(var row=0; row < this.rowNum; row++){
+		for(var col=0; col<this.colNum; col++){
+			//this.isBottomArea(row,col);
+			//this.isPeakArea(row, col);
+		}
+	}
 };
 
 /**
