@@ -41,6 +41,19 @@ else{
 
 console.log('Map File: ' + filePath);
 
+function SG_SKI_AREA(row, col){
+	this.row = row;
+	this.col = col;
+}
+
+function SG_SKI_PATH(srcArea, dstArea, delta, length){
+	this.srcArea = srcArea;
+	this.dstArea = dstArea;
+	this.pathDelta = delta;
+	this.pathLength= length;
+}
+
+
 class SG_SKI_RESOUT extends ev{
 	constructor(mapFilePath){
 		super();
@@ -52,17 +65,7 @@ class SG_SKI_RESOUT extends ev{
 		this.rowNum = 0;
 		this.colNum = 0;
 
-		this.bestPath = {
-			"srcArea": {
-				"row":0,
-				"col":0,
-			},
-			"dstArea": {
-				"row": 0,
-				"col": 0,
-			},
-			"pathLength": 0,
-		};
+		this.bestPath = new SG_SKI_PATH(new SG_SKI_AREA(0,0),new SG_SKI_AREA(0,0),0,0 );
 
 		this.mapReadlineInterface = readline.createInterface({
 			input: fs.createReadStream(that.mapFilePath)
@@ -129,8 +132,20 @@ SG_SKI_RESOUT.prototype.isBottomArea = function(row, col) {
 	}
 };
 
+SG_SKI_RESOUT.prototype.isBetterPath = function(newPath) {
+	if( newPath.pathLength > this.bestPath.pathLength ){
+		return true;
+	}
+	else if (newPath.pathLength == this.bestPath.pathLength
+		 && newPath.pathDelta > this.bestPath.pathDelta ){
+		return true;
+	}
+	else{
+		return false;
+	}
+};
 
-SG_SKI_RESOUT.prototype.getMapBestPath = function() {
+SG_SKI_RESOUT.prototype.getMapBestPath = function() { 	
 	console.log(this.mapArray);
 	console.log(this.bestPathArray);
 
@@ -138,6 +153,14 @@ SG_SKI_RESOUT.prototype.getMapBestPath = function() {
 		for(var col=0; col<this.colNum; col++){
 			//this.isBottomArea(row,col);
 			//this.isPeakArea(row, col);
+			if(this.isPeakArea(row,col)){
+				// Peak is potential best path start point, calculate the best path
+				var path = this.getAreaLongestPath(row,col);
+				// Compare with the existing Best Path
+				if( this.isBetterPath(path) ){
+					this.bestPath = path;
+				}
+			}
 		}
 	}
 };
@@ -156,18 +179,17 @@ SG_SKI_RESOUT.prototype.getMapBestPath = function() {
 SG_SKI_RESOUT.prototype.getAreaLongestPath = function(srcRow, srcCol) {
 	// If it's a bottom area, which means there is no where to go, the longest is 1
 	if(this.isBottomArea(srcRow, srcCol)){
-		var bestPath = {
-			dstRow : srcRow,
-			dstCol : srcCol,
-			length : 1,
-		};
+		var bestPath = new SG_SKI_PATH(new SG_SKI_AREA(srcRow,srcCol), // Start Area
+																	 new SG_SKI_AREA(srcRow,srcCol), // Stop Area
+																	 0,	// Delta Elevation 
+																	 1);// Path length
 
 		return bestPath;
 	}
 	// Not a bottom, which means I do have some where to go
 	else if(this.bestPathArray[srcRow][srcCol].length){
 		// Already known the best path length and stop area
-		return this.bestPathArray[srcRow][srcCol];
+		//return this.bestPathArray[srcRow][srcCol];
 	}
 	//else if()
 };
