@@ -5,9 +5,10 @@
  * @version $Id$
  */
 
-var fs = require('fs'),
+const fs = require('fs'),
 	semver = require('semver'),
-	readline = require('readline');
+	readline = require('readline'),
+	ev = require('events');
 // Check the Node version
 
 const RETURN_ERR = {
@@ -40,60 +41,42 @@ else{
 
 console.log('Map File: ' + filePath);
 
-function SG_SKI_RESOUT(mapFilePath){
-	let that = this;
-	this.mapArray = new Array(0);
-	this.mapFilePath = mapFilePath;
-	this.rowNum = 0;
-	this.colNum = 0;
+class SG_SKI_RESOUT extends ev{
+	constructor(mapFilePath){
+		super();
+		let that = this;
 
-	this.bestPath = {
-		"srcArea": {
-			"row":0,
-			"col":0,
-		},
-		"dstArea": {
-			"row": 0,
-			"col": 0,
-		},
-		"pathLength": 0,
-	};
+		this.mapArray = [];
+		this.mapFilePath = mapFilePath;
+		this.rowNum = 0;
+		this.colNum = 0;
 
-	this.mapReadlineInterface = readline.createInterface({
-		input: fs.createReadStream(that.mapFilePath)
-	})
+		this.bestPath = {
+			"srcArea": {
+				"row":0,
+				"col":0,
+			},
+			"dstArea": {
+				"row": 0,
+				"col": 0,
+			},
+			"pathLength": 0,
+		};
 
-	this.mapReadlineInterface.on('line', (line) => {
-		arguments.callee.line = ++arguments.callee.line || 0;
-		if(arguments.callee.line == 0){
-			// The first line which stores the dimension
-			var dimension = line.split(' ');
-			this.rowNum = dimension[0];
-			this.colNum = dimension[1];
-			console.log('Row: ' + this.rowNum + '; Col: ' + this.colNum);
-		}
-		else{
-			var numBufferString = line.split(' ');
-			if(numBufferString.length != this.colNum){
-				console.log('Illegal Ski Resort Map. Please double check the map file');
-				process.exit(RETURN_ERR.ERR_ILLEGAL_MAP);
-			}
+		this.mapReadlineInterface = readline.createInterface({
+			input: fs.createReadStream(that.mapFilePath)
+		})
 
-			this.mapArray.push(numBufferString);
-		}
-	})
+		this.mapReadlineInterface.on('line', (line) => {
+			this.emit('mapRead', line)
+		})
 
-	this.mapReadlineInterface.on('close', () => {
-		if(this.mapArray.length != this.rowNum){
-			console.log('Illegal Ski Resort Map. Please double check the map file');
-			process.exit(RETURN_ERR.ERR_ILLEGAL_MAP);
-		}
-		else{
-			console.log('End of file and row num is correct');
-			this.getMapBestPath();
-		}
-	})
+		this.mapReadlineInterface.on('close', () => {
+			this.emit('init');
+		})
+	}
 }
+
 
 SG_SKI_RESOUT.prototype.isPeakArea = function(row, col) {
 	// body...
@@ -111,5 +94,42 @@ SG_SKI_RESOUT.prototype.getMapBestPath = function() {
 	console.log(this.mapArray);
 };
 
+SG_SKI_RESOUT.prototype.getAreaLongestPath = function(srcRow, srcCol) {
+	// body...
+};
+
 
 var resort = new SG_SKI_RESOUT(filePath);
+
+resort.on('mapRead', (line) => {
+	arguments.callee.line = ++arguments.callee.line || 0;
+	if(arguments.callee.line == 0){
+		// The first line which stores the dimension
+		var dimension = line.split(' ');
+		resort.rowNum = dimension[0];
+		resort.colNum = dimension[1];
+		console.log('Row: ' + resort.rowNum + '; Col: ' + resort.colNum);
+	}
+	else{
+		var numBufferString = line.split(' ');
+		if(numBufferString.length != resort.colNum){
+			console.log('Illegal Ski Resort Map. Please double check the map file');
+			process.exit(RETURN_ERR.ERR_ILLEGAL_MAP);
+		}
+
+		resort.mapArray.push(numBufferString);
+	}	
+})
+
+resort.on('init', () =>{
+	if(resort.mapArray.length != resort.rowNum){
+		console.log('Illegal Ski Resort Map. Please double check the map file');
+		process.exit(RETURN_ERR.ERR_ILLEGAL_MAP);
+	}
+	else{
+		console.log('End of file and row num is correct');
+		resort.getMapBestPath();
+	}	
+})
+
+
