@@ -78,7 +78,11 @@ class SG_SKI_RESOUT extends ev{
 	}
 }
 
-
+/**
+ * @param  {row: the vertical location of a given area}
+ * @param  {col: the horizonal location of a given area}
+ * @return {true: is a Peak, which means it's a potential start point}
+ */
 SG_SKI_RESOUT.prototype.isPeakArea = function(row, col) {
 	// body...
 	if(row && this.mapArray[row-1][col] > this.mapArray[row][col]){
@@ -99,6 +103,11 @@ SG_SKI_RESOUT.prototype.isPeakArea = function(row, col) {
 	}
 };
 
+/**
+ * @param  {row: the vertical location of a given area}
+ * @param  {col: the horizonal location of a given area}
+ * @return {true: means it's a bottom area, which means it could be a potential stop point}
+ */
 
 SG_SKI_RESOUT.prototype.isBottomArea = function(row, col) {
 	// body...
@@ -122,9 +131,8 @@ SG_SKI_RESOUT.prototype.isBottomArea = function(row, col) {
 
 
 SG_SKI_RESOUT.prototype.getMapBestPath = function() {
-	// body...
-	console.log('To get the best path of the resort');
 	console.log(this.mapArray);
+	console.log(this.bestPathArray);
 
 	for(var row=0; row < this.rowNum; row++){
 		for(var col=0; col<this.colNum; col++){
@@ -146,6 +154,7 @@ SG_SKI_RESOUT.prototype.getMapBestPath = function() {
  * }}
  */
 SG_SKI_RESOUT.prototype.getAreaLongestPath = function(srcRow, srcCol) {
+	// If it's a bottom area, which means there is no where to go, the longest is 1
 	if(this.isBottomArea(srcRow, srcCol)){
 		var bestPath = {
 			dstRow : srcRow,
@@ -155,10 +164,12 @@ SG_SKI_RESOUT.prototype.getAreaLongestPath = function(srcRow, srcCol) {
 
 		return bestPath;
 	}
-
-	else{
-
+	// Not a bottom, which means I do have some where to go
+	else if(this.bestPathArray[srcRow][srcCol].length){
+		// Already known the best path length and stop area
+		return this.bestPathArray[srcRow][srcCol];
 	}
+	//else if()
 };
 
 
@@ -185,6 +196,14 @@ resort.on('mapRead', (line) => {
 			numBufferDigit[index] = parseInt(numBufferString[index]);
 		}
 		resort.mapArray.push(numBufferDigit);
+
+		var bestPath = new Array(numBufferDigit.length);
+		bestPath.fill({
+			dstRow : 0,
+			dstCol : 0,
+			length : 0,			
+		})
+		resort.bestPathArray.push(bestPath);
 	}	
 })
 
@@ -194,7 +213,6 @@ resort.on('init', () =>{
 		process.exit(RETURN_ERR.ERR_ILLEGAL_MAP);
 	}
 	else{
-		console.log('End of file and row num is correct');
 		resort.getMapBestPath();
 	}	
 })
