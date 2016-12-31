@@ -5,8 +5,7 @@
  * @version $Id$
  */
 
-const	_ = require('underscore'),
-		ev= require('events'),
+const	ev= require('events'),
 		fs= require('fs'),
 		readline  = require('readline');
 
