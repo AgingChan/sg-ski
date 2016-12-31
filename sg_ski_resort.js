@@ -16,36 +16,6 @@ function LOCATION(x,y){
 	this.col = y;
 }
 
-function SG_SKI_PATH(srcLoc, dstLoc, length){
-	this.srcLoc = srcLoc;
-	this.dstLoc = dstLoc;
-	this.length = length;
-}
-
-SG_SKI_PATH.prototype.setSrcLoc = function(srcLoc) {
-	this.srcLoc = srcLoc;
-};
-
-SG_SKI_PATH.fromKnownMap = function(resort,srcLoc) {
-	var dstLoc = resort._getLocationBestPathMap(srcLoc).dstLoc;
-	var length = resort._getLocationBestPathMap(srcLoc).length;
-	return (new SG_SKI_PATH(srcLoc, dstLoc,length));
-};
-
-SG_SKI_PATH.fromNeighbourPath = function (resort,location, neighbour){
-	if(!resort.isValidLocation(neighbour)){
-		return (new SG_SKI_PATH(location, location, 1));
-	}
-	else if(resort.getLocationElevation(location) <= resort.getLocationElevation(neighbour)){
-		return (new SG_SKI_PATH(location, location, 1));
-	}
-	else{
-		var result = new resort.getLocationBestPath(neighbour);
-		result.srcLoc = location;
-		result.length ++;
-		return result;
-	}
-}
 
 
 class SG_SKI_RESORT extends ev {
@@ -54,24 +24,63 @@ class SG_SKI_RESORT extends ev {
 		let that = this;
 		let resortMap = new Array();
 		let resortBestPathMap = new Array();
+
+		that.colNum = 0;
+		that.rowNum = 0;
 		const resortMapFile = mapFilePath;
-		that.resortBestPath = new SG_SKI_PATH();
+		var resortBestPath = new SG_SKI_PATH();
+
+		function SG_SKI_PATH(srcLoc, dstLoc, length){
+			this.srcLoc = srcLoc;
+			this.dstLoc = dstLoc;
+			this.length = length;
+		}
+
+		SG_SKI_PATH.prototype.setSrcLoc = function(srcLoc) {
+			this.srcLoc = srcLoc;
+		};
+
+		SG_SKI_PATH.fromKnownMap = function(srcLoc) {
+			var dstLoc = that._getLocationBestPathMap(srcLoc).dstLoc;
+			var length = that._getLocationBestPathMap(srcLoc).length;
+			return (new SG_SKI_PATH(srcLoc, dstLoc,length));
+		};
+
+		SG_SKI_PATH.fromNeighbourPath = function (location, neighbour){
+			if(!that.isValidLocation(neighbour)){
+				//console.log('neighbour is invalid');
+				return (new SG_SKI_PATH(location, location, 1));
+			}
+			else if(that.getLocationElevation(location) <= that.getLocationElevation(neighbour)){
+				//console.log('neighbour has a higher altitude');
+				return (new SG_SKI_PATH(location, location, 1));
+			}
+			else{
+				//console.log('New Path found');
+				var result = new that.getLocationBestPath(neighbour);
+				result.srcLoc = location;
+				result.length ++;
+				return result;
+			}
+		}
 
 		let mapInterface = readline.createInterface({
 			input: fs.createReadStream(resortMapFile),
 		})
 
 		mapInterface.on('line', (line) => {
-			if(that.colNum == undefined){
+			if(!that.colNum){
 				let dimension = line.split(' ');
-				that.rowNum = dimension[0];
-				that.colNum = dimension[1];
+				that.rowNum = parseInt(dimension[0]);
+				that.colNum = parseInt(dimension[1]);
 				console.log("Resort Map Size initilize");
 			}
 			else{
 				let numStringBuf = line.split(' ');
 				if(numStringBuf.length != that.colNum){
-					throw new UserException("Illegal Resort Map");
+					console.log(numStringBuf.length);
+					console.log(that.colNum);
+					throw "Illegal Resort Map";
 				}
 
 				let numDigitBuf = new Array(numStringBuf.length);
@@ -88,15 +97,15 @@ class SG_SKI_RESORT extends ev {
 			}
 		})
 		mapInterface.on('close', () => {
-			that.emit('init');
 			console.log(resortMap);
 			console.log(resortBestPathMap);
+			that.emit('init');
 		})
 
 		this.isValidLocation = function(location){
-			return (location.row 
+			return ( (location.row >=0)
 					&& (location.row <that.rowNum)
-					&& location.col 
+					&& (location.col >=0)
 					&& (location.col <that.colNum) );
 		}
 
@@ -105,7 +114,7 @@ class SG_SKI_RESORT extends ev {
 				return resortMap[location.row][location.col];
 			}
 			else{
-				throw new UserException('Invalid Location of the Resort');
+				throw 'Invalid Location of the Resort';
 			}
 		}
 
@@ -120,7 +129,7 @@ class SG_SKI_RESORT extends ev {
 		}
 
 		var isBetterPath = function(oldPath, newPath){
-			if(typeof oldPath.length == undefined){
+			if(typeof oldPath.length === 'undefined'){
 				return true;
 			}
 			else if(newPath.length > oldPath.length){
@@ -140,33 +149,40 @@ class SG_SKI_RESORT extends ev {
 
 		this.getLocationBestPath = function(location){
 			if(!that.isValidLocation(location)){
+				console.log("Illegal location");
+				console.log(location);
 				return new SG_SKI_PATH(LOCATION(0,0), LOCATION(0,0),0 );
 			}
 			else if(_getLocationBestPathMap(location)){
+				console.log("Get Path from the Map");
 				return SG_SKI_PATH.fromKnownMap(location);
 			}
 			else{
-				var locBestPath = new SG_SKI_PATH();
-				var pathArray = new Array();
+				let locBestPath = new SG_SKI_PATH();
+				let pathArray = new Array();
 
-				var north = new LOCATION(location.row -1, location.col);
-				pathArray.push(SG_SKI_PATH.fromNeighbourPath(that,location, north));
+				let north = new LOCATION(location.row -1, location.col);
+				pathArray.push(SG_SKI_PATH.fromNeighbourPath(location, north));
 
-				var south = new LOCATION(location.row +1, location.col);
-				pathArray.push(SG_SKI_PATH.fromNeighbourPath(that,location, south));
+				let south = new LOCATION(location.row +1, location.col);
+				pathArray.push(SG_SKI_PATH.fromNeighbourPath(location, south));
 
-				var east = new LOCATION(location.row, location.col1);
-				pathArray.push(SG_SKI_PATH.fromNeighbourPath(that, location,east));
+				let east = new LOCATION(location.row, location.col+1);
+				pathArray.push(SG_SKI_PATH.fromNeighbourPath(location,east));
 
-				var west = new LOCATION(location.row, location.col-1);
-				pathArray.push(SG_SKI_PATH.fromNeighbourPath(that, location,west));
+				let west = new LOCATION(location.row, location.col-1);
+				pathArray.push(SG_SKI_PATH.fromNeighbourPath(location,west));
 
 				pathArray.forEach(function(element){
 					if(isBetterPath(locBestPath,element)){
-						locBestPath = element;
+						locBestPath.srcLoc = element.srcLoc;
+						locBestPath.dstLoc = element.dstLoc;
+						locBestPath.length = element.length;
 					}
 				})
-
+				// console.log(location);
+				// console.log(pathArray);
+				// console.log(locBestPath);
 				return locBestPath;
 			}
 		}
@@ -183,24 +199,24 @@ class SG_SKI_RESORT extends ev {
 					// Peak is potential best path start point, calculate the best path
 					var path = that.getLocationBestPath(location);
 					// Compare with the existing Best Path
-					if( isBetterPath(that.resortBestPath,path) ){
-						that.resortBestPath = path;
+					if( isBetterPath(resortBestPath,path) ){
+						resortBestPath = path;
 					}
 				}
 			}
 
-			console.log(this.resortBestPath);
+			console.log(resortBestPath);
 		}
 
 		this.getResortBestPathLengthSlope = function(){
 			var result;
-			if(typeof that.resortBestPath.length == undefined){
+			if(typeof resortBestPath.length == undefined){
 				getResortBestPath();
 				return getResortBestPathLengthSlope();
 			}
 			else{
-				result.slope = that.getPathDeltaElevation(that.resortBestPath);
-				result.length= that.resortBestPath.length;
+				result.slope = that.getPathDeltaElevation(resortBestPath);
+				result.length= resortBestPath.length;
 
 				console.log("Best Path Length: " + result.length + "; Slope: " + result.slope);
 
@@ -214,8 +230,9 @@ class SG_SKI_RESORT extends ev {
 //module.exports = SG_SKI_RESORT
 
 
-let newResort = new SG_SKI_RESORT("./test1.txt");
+let newResort = new SG_SKI_RESORT("./test2.txt");
 
 newResort.on('init', () => {
 	newResort.getResortBestPath();
+	//newResort.getLocationBestPath(new LOCATION(0,2));
 })
