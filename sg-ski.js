@@ -18,8 +18,7 @@ const RETURN_ERR = {
 
 
 if(semver.lt(process.version,'6.0.0')){
-	console.log('Node version oudated');
-	process.exit(1);
+	throw "Please install the latest Node.( >= 6.0.0)"
 }
 
 var filePath = '';
