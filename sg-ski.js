@@ -5,28 +5,20 @@
  * @version $Id$
  */
 
-const SG_SKI_RESORT = require('./sg_ski_resort.js'),
-			semver = require('semver');
+const semver = require('semver');
 // Check the Node version
-
-const RETURN_ERR = {
-	SUCCESS: 0,
-	ERR_INVALID_ARGUMENTS: 1,
-	ERR_ILLEGAL_MAP: 2,
-}
-
-
-
 if(semver.lt(process.version,'6.0.0')){
 	throw "Please install the latest Node.( >= 6.0.0)"
+	process.exit(1)
 }
+
+const SG_SKI_RESORT = require('./sg_ski_resort.js');
 
 var filePath = '';
 
 // Parameter Handling
 if(process.argv.length > 3){
-	console.log("Unexpected arguments");
-	console.log("Please try this 'node sg-ski.js [map file]'");
+	throw "Usage: node sg-ski.js [map file]";
 	process.exit(RETURN_ERR.ERR_INVALID_ARGUMENTS);
 }
 else if(process.argv.length === 3){
@@ -39,7 +31,7 @@ else{
 console.log('Map File: ' + filePath);
 
 
-let newResort = new SG_SKI_RESORT(filePath);
+var newResort = new SG_SKI_RESORT(filePath);
 
 newResort.on('init', () => {
 	newResort.getResortBestPathLengthSlope();
