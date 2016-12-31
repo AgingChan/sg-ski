@@ -41,8 +41,8 @@ class SG_SKI_RESORT extends ev {
 		};
 
 		SG_SKI_PATH.fromKnownMap = function(srcLoc) {
-			var dstLoc = that._getLocationBestPathMap(srcLoc).dstLoc;
-			var length = that._getLocationBestPathMap(srcLoc).length;
+			var dstLoc = _getLocationBestPathMap(srcLoc).dstLoc;
+			var length = _getLocationBestPathMap(srcLoc).length;
 			return (new SG_SKI_PATH(srcLoc, dstLoc,length));
 		};
 
@@ -90,15 +90,13 @@ class SG_SKI_RESORT extends ev {
 
 				resortMap.push(numDigitBuf);
 
-				// let unknownPath = new SG_SKI_PATH();
 				let pathArray = new Array(numStringBuf.length);
-				// pathArray.fill(unknownPath);
 				resortBestPathMap.push(pathArray);
 			}
 		})
 		mapInterface.on('close', () => {
-			console.log(resortMap);
-			console.log(resortBestPathMap);
+			// console.log(resortMap);
+			// console.log(resortBestPathMap);
 			that.emit('init');
 		})
 
@@ -124,8 +122,17 @@ class SG_SKI_RESORT extends ev {
 
 
 
-		var _getLocationBestPathMap =  function(location){
+		var _getLocationBestPathMap = function(location){
 			return resortBestPathMap[location.row][location.col];
+		}
+
+		var _setLocationBestPathMap = function(location,dstLoc,length){
+			resortBestPathMap[location.row][location.col] = {
+				dstLoc: dstLoc,
+				length: length,
+			}
+
+			//console.log(resortBestPathMap[location.row][location.col]);
 		}
 
 		var isBetterPath = function(oldPath, newPath){
@@ -154,7 +161,6 @@ class SG_SKI_RESORT extends ev {
 				return new SG_SKI_PATH(LOCATION(0,0), LOCATION(0,0),0 );
 			}
 			else if(_getLocationBestPathMap(location)){
-				console.log("Get Path from the Map");
 				return SG_SKI_PATH.fromKnownMap(location);
 			}
 			else{
@@ -180,9 +186,9 @@ class SG_SKI_RESORT extends ev {
 						locBestPath.length = element.length;
 					}
 				})
-				// console.log(location);
-				// console.log(pathArray);
-				// console.log(locBestPath);
+
+				_setLocationBestPathMap(location, locBestPath.dstLoc, locBestPath.length);
+
 				return locBestPath;
 			}
 		}
