@@ -20,7 +20,7 @@ const RETURN_ERR = {
 
 
 if(semver.lt(process.version,'6.0.0')){
-	console.log('Node version mismatch');
+	console.log('Node version oudated');
 	process.exit(1);
 }
 
@@ -44,14 +44,14 @@ console.log('Map File: ' + filePath);
 function SG_SKI_AREA(row, col){
 	this.row = row;
 	this.col = col;
-}
+};
 
 function SG_SKI_PATH(srcArea, dstArea, delta, length){
 	this.srcArea = srcArea;
 	this.dstArea = dstArea;
 	this.pathDelta = delta;
 	this.pathLength= length;
-}
+};
 
 
 class SG_SKI_RESOUT extends ev{
@@ -177,21 +177,36 @@ SG_SKI_RESOUT.prototype.getMapBestPath = function() {
  * }}
  */
 SG_SKI_RESOUT.prototype.getAreaLongestPath = function(srcRow, srcCol) {
+	var srcArea = new SG_SKI_AREA(srcRow,srcCol);
 	// If it's a bottom area, which means there is no where to go, the longest is 1
 	if(this.isBottomArea(srcRow, srcCol)){
-		var bestPath = new SG_SKI_PATH(new SG_SKI_AREA(srcRow,srcCol), // Start Area
-																	 new SG_SKI_AREA(srcRow,srcCol), // Stop Area
-																	 0,	// Delta Elevation 
-																	 1);// Path length
+
+		var bestPath = new SG_SKI_PATH(srcArea, // Start Area
+																	srcArea, // Stop Area
+																	0,	// Delta Elevation 
+																	1);// Path length
 
 		return bestPath;
 	}
 	// Not a bottom, which means I do have some where to go
 	else if(this.bestPathArray[srcRow][srcCol].length){
 		// Already known the best path length and stop area
-		//return this.bestPathArray[srcRow][srcCol];
+		var dstRow = this.bestPathArray[srcRow][srcCol].dstArea.row;
+		var dstCol = this.bestPathArray[srcRow][srcCol].dstArea.col;
+		var dstElevation = this.mapArray[dstRow][dstCol];
+		var deltaElevation= this.mapArray[srcRow][srcCol];
+
+		//var pathDelta = this.
+		var newPath = new SG_SKI_PATH(srcArea,
+																	new SG_SKI_AREA(dstRow,dstCol),
+																	deltaElevation,
+																	this.bestPathArray[srcRow][srcCol].length);
+		return newPath;
 	}
-	//else if()
+	else{
+		// This area is still unknown area, need to calculate based on it's neighbour
+
+	}
 };
 
 
@@ -220,11 +235,6 @@ resort.on('mapRead', (line) => {
 		resort.mapArray.push(numBufferDigit);
 
 		var bestPath = new Array(numBufferDigit.length);
-		bestPath.fill({
-			dstRow : 0,
-			dstCol : 0,
-			length : 0,			
-		})
 		resort.bestPathArray.push(bestPath);
 	}	
 })
@@ -232,7 +242,7 @@ resort.on('mapRead', (line) => {
 resort.on('init', () =>{
 	if(resort.mapArray.length != resort.rowNum){
 		console.log('Illegal Ski Resort Map. Please double check the map file');
-		process.exit(RETURN_ERR.ERR_ILLEGAL_MAP);
+		process.exit(ETURN_ERR.ERR_ILLEGAL_MAP);
 	}
 	else{
 		resort.getMapBestPath();
