@@ -111,7 +111,6 @@ SG_SKI_RESOUT.prototype.isPeakArea = function(row, col) {
  * @param  {col: the horizonal location of a given area}
  * @return {true: means it's a bottom area, which means it could be a potential stop point}
  */
-
 SG_SKI_RESOUT.prototype.isBottomArea = function(row, col) {
 	// body...
 	if(row && this.mapArray[row-1][col] < this.mapArray[row][col]){
@@ -177,6 +176,13 @@ SG_SKI_RESOUT.prototype.getMapBestPath = function() {
  * }}
  */
 SG_SKI_RESOUT.prototype.getAreaLongestPath = function(srcRow, srcCol) {
+	// for illegal node, return 0
+	if(srcRow<0 || srcRow >=this.rowNum || srcCol<0 || srcCol>=this.colNum){
+		return (new function (new SG_SKI_AREA(0,0),
+													new SG_SKI_AREA(0,0),
+													0,
+													0));
+	}
 	var srcArea = new SG_SKI_AREA(srcRow,srcCol);
 	// If it's a bottom area, which means there is no where to go, the longest is 1
 	if(this.isBottomArea(srcRow, srcCol)){
@@ -205,7 +211,32 @@ SG_SKI_RESOUT.prototype.getAreaLongestPath = function(srcRow, srcCol) {
 	}
 	else{
 		// This area is still unknown area, need to calculate based on it's neighbour
+		var nbPaths = new Array();
+		nbPaths.push(this.getAreaLongestPath(srcRow-1, srcCol));
+		nbPaths.push(this.getAreaLongestPath(srcRow+1, srcCol));
+		nbPaths.push(this.getAreaLongestPath(srcRow, srcCol-1));
+		nbPaths.push(this.getAreaLongestPath(srcRow, srcCol+1));
 
+		let nbBestPath = new SG_SKI_PATH( srcArea
+																			new SG_SKI_AREA(0,0),
+																			0,
+																			0 );
+		nbPaths.forEach(function(element){
+			if(element.pathLength > nbBestPath.pathLength ){
+				nbBestPath.pathLength = element.pathLength
+				nbBestPath.dstArea = element.dstArea;
+			}
+			else if( element.pathLength == nbBestPath.pathLength ){
+				if(this.mapArray[element.dstArea.row][element.dstArea.col] < 
+					this.mapArray[nbBestPath.dstArea.row][nbBestPath.dstArea.col]){
+					nbBestPath.pathLength = element.pathLength
+					nbBestPath.dstArea = element.dstArea;
+				}
+			}
+		})
+
+		nbBestPath.pathLength ++;
+		nbBestPath.pathDelta = 
 	}
 };
 
@@ -235,6 +266,13 @@ resort.on('mapRead', (line) => {
 		resort.mapArray.push(numBufferDigit);
 
 		var bestPath = new Array(numBufferDigit.length);
+		bestPath.fill({
+			dstArea: {
+				row: undefined,
+				col: undefined,
+			},
+			length:undefined,
+		})
 		resort.bestPathArray.push(bestPath);
 	}	
 })
