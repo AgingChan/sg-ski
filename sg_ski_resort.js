@@ -209,15 +209,16 @@ class SG_SKI_RESORT extends ev {
 		}
 
 		this.getResortBestPathLengthSlope = function(){
-			var result;
-			if(typeof resortBestPath.length == undefined){
-				getResortBestPath();
-				return getResortBestPathLengthSlope();
+
+			if(typeof resortBestPath.length === 'undefined'){
+				that.getResortBestPath();
+				return that.getResortBestPathLengthSlope();
 			}
 			else{
-				result.slope = that.getPathDeltaElevation(resortBestPath);
-				result.length= resortBestPath.length;
-
+				let result = {
+					slope: getPathDeltaElevation(resortBestPath),
+					length: resortBestPath.length,
+				};
 				console.log("Best Path Length: " + result.length + "; Slope: " + result.slope);
 
 				return result;
@@ -227,12 +228,5 @@ class SG_SKI_RESORT extends ev {
 } 
 
 
-//module.exports = SG_SKI_RESORT
+module.exports = SG_SKI_RESORT
 
-
-let newResort = new SG_SKI_RESORT("./test2.txt");
-
-newResort.on('init', () => {
-	newResort.getResortBestPath();
-	//newResort.getLocationBestPath(new LOCATION(0,2));
-})
